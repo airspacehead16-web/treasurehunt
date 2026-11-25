@@ -1,0 +1,119 @@
+import random
+import time
+
+# Tuple: Immutable winning condition (Room Name, Required Item)
+WIN_CONDITION = ("treasure vault", "golden key")
+
+# Dictionary: Game map with nested dictionaries and lists
+rooms = {
+    "entrance hall": {
+        "description": "A dimly lit stone hall with cobwebs in the corners.",
+        "exits": {"north": "library", "east": "armory"},
+        "item": "torch"
+    },
+    "library": {
+        "description": "Tall wooden bookshelves tower over you. Dust floats in the air.",
+        "exits": {"south": "entrance hall", "east": "secret study"},
+        "item": "ancient map"
+    },
+    "armory": {
+        "description": "Rusted shields and broken swords line the walls.",
+        "exits": {"west": "entrance hall", "north": "secret study"},
+        "item": "golden key"
+    },
+    "secret study": {
+        "description": "A hidden room with a massive iron door to the north.",
+        "exits": {"west": "library", "south": "armory", "north": "treasure vault"},
+        "item": None
+    },
+    "treasure vault": {
+        "description": "Piles of gold coins and jewels sparkle under a single shaft of light!",
+        "exits": {"south": "secret study"},
+        "item": "royal crown"
+    }
+}
+
+# List: Player's dynamic inventory and random flavor events
+inventory = []
+random_events = [
+    "You hear footsteps echoing in the distance...",
+    "A cold draft blows past your face.",
+    "A bat flutters across the ceiling.",
+    "The floorboards creak beneath your boots."
+]
+
+def show_status(current_room):
+    print("\n" + "=" * 45)
+    print(f"LOCATION: {current_room.upper()}")
+    print(rooms[current_room]["description"])
+    
+    # Show item in the room if present
+    item = rooms[current_room]["item"]
+    if item:
+        print(f"You see a [{item}] lying here.")
+        
+    # Show available exits using dictionary keys
+    exits = ", ".join(rooms[current_room]["exits"].keys())
+    print(f"Exits: {exits}")
+    print(f"Inventory: {inventory}")
+    print("=" * 45)
+
+def play_game():
+    current_room = "entrance hall"
+    moves = 0
+    
+    print("Welcome to the Dungeon Treasure Hunt!")
+    print("Commands: 'go [direction]', 'get [item]', or 'quit'")
+    time.sleep(1)
+
+    while True:
+        show_status(current_room)
+        
+        # Check win condition using the Tuple
+        if (current_room, WIN_CONDITION[1]) == (WIN_CONDITION[0], WIN_CONDITION[1]) and WIN_CONDITION[1] in inventory:
+            print(f"\nCONGRATULATIONS! You unlocked the vault with the {WIN_CONDITION[1]} and won in {moves} moves!")
+            break
+
+        # String manipulation on user input
+        command = input("\nWhat do you want to do? ").strip().lower()
+        words = command.split(" ", 1)
+        action = words[0]
+
+        if action == "quit":
+            print("Thanks for playing!")
+            break
+
+        elif action == "go" and len(words) > 1:
+            direction = words[1]
+            if direction in rooms[current_room]["exits"]:
+                next_room = rooms[current_room]["exits"][direction]
+                
+                # Lock check for the final room
+                if next_room == WIN_CONDITION[0] and WIN_CONDITION[1] not in inventory:
+                    print(f"\nThe door is locked! You need the '{WIN_CONDITION[1]}' to enter.")
+                else:
+                    current_room = next_room
+                    moves += 1
+                    # 40% chance to trigger a random event from the list
+                    if random.random() < 0.4:
+                        print(f"\n* {random.choice(random_events)} *")
+                        time.sleep(0.8)
+            else:
+                print("\nYou can't go that way!")
+
+        elif action == "get" and len(words) > 1:
+            requested_item = words[1]
+            room_item = rooms[current_room]["item"]
+            
+            if room_item and requested_item == room_item:
+                inventory.append(room_item)
+                rooms[current_room]["item"] = None
+                print(f"\nYou picked up the {room_item}!")
+            else:
+                print("\nThere is no such item here.")
+
+        else:
+            print("\nInvalid command. Try 'go north', 'get torch', or 'quit'.")
+
+if __name__ == "__main__":
+    play_game()
